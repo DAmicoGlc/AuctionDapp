@@ -1,0 +1,372 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2018.10.14)  26 JUL 2019 18:17
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**title.tex
+(./title.tex
+LaTeX2e <2017-04-15>
+Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
+
+! LaTeX Error: Environment titlepage undefined.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.1 \begin{titlepage}
+                     
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.8 	\textsc{\LARGE Peer to Peer and Block Chain}
+                                                 \\[1.5cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Undefined control sequence.
+<recently read> \LARGE 
+                       
+l.8 	\textsc{\LARGE Peer to Peer and Block Chain}
+                                                 \\[1.5cm]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+Overfull \hbox (24.59427pt too wide) in paragraph at lines 8--8
+ []\OT1/cmr/m/sc/10 Peer 
+ []
+
+
+Overfull \hbox (12.2666pt too wide) in paragraph at lines 8--8
+ \OT1/cmr/m/sc/10 to 
+ []
+
+
+Overfull \hbox (24.59427pt too wide) in paragraph at lines 8--8
+ \OT1/cmr/m/sc/10 Peer 
+ []
+
+
+Overfull \hbox (18.51106pt too wide) in paragraph at lines 8--8
+ \OT1/cmr/m/sc/10 and 
+ []
+
+
+Overfull \hbox (31.46368pt too wide) in paragraph at lines 8--8
+ \OT1/cmr/m/sc/10 Block 
+ []
+
+
+Overfull \hbox (29.28319pt too wide) in paragraph at lines 8--8
+ \OT1/cmr/m/sc/10 Chain 
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.10 	\textsc{\Large UniversitÃ  di Pisa}
+                                         \\[0.5cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Undefined control sequence.
+<recently read> \Large 
+                       
+l.10 	\textsc{\Large UniversitÃ  di Pisa}
+                                         \\[0.5cm]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Missing character: There is no Ã in font cmcsc10!
+Missing character: There is no   in font cmcsc10!
+
+Overfull \hbox (48.53862pt too wide) in paragraph at lines 10--10
+ []\OT1/cmr/m/sc/10 Universit 
+ []
+
+
+Overfull \hbox (9.26663pt too wide) in paragraph at lines 10--10
+ \OT1/cmr/m/sc/10 di 
+ []
+
+
+Overfull \hbox (21.14986pt too wide) in paragraph at lines 10--10
+ \OT1/cmr/m/sc/10 Pisa 
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.11 	\textsc{\Large Scuola Superiore Santâ€™Anna}
+                                                  \\[0.5cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Undefined control sequence.
+<recently read> \Large 
+                       
+l.11 	\textsc{\Large Scuola Superiore Santâ€™Anna}
+                                                  \\[0.5cm]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Missing character: There is no â in font cmcsc10!
+Missing character: There is no € in font cmcsc10!
+Missing character: There is no ™ in font cmcsc10!
+
+Overfull \hbox (35.77757pt too wide) in paragraph at lines 11--11
+ []\OT1/cmr/m/sc/10 Scuola 
+ []
+
+
+Overfull \hbox (16.0221pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 Su- 
+ []
+
+
+Overfull \hbox (14.93323pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 pe- 
+ []
+
+
+Overfull \hbox (12.82214pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 ri- 
+ []
+
+
+Overfull \hbox (17.95547pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 ore 
+ []
+
+
+Overfull \hbox (22.15541pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 San- 
+ []
+
+
+Overfull \hbox (32.44983pt too wide) in paragraph at lines 11--11
+ \OT1/cmr/m/sc/10 tAnna 
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.15 	\HRule
+            \\[0.4cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Undefined control sequence.
+l.17 	{\huge
+            \bfseries Development of a Dapp for Smart Auctions}\\[0.4cm]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.17 	{\huge\bfseries D
+                       evelopment of a Dapp for Smart Auctions}\\[0.4cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+Overfull \hbox (65.83995pt too wide) in paragraph at lines 17--17
+ []\OT1/cmr/bx/n/10 Development 
+ []
+
+
+Overfull \hbox (9.26384pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 of 
+ []
+
+
+Overfull \hbox (5.59023pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 a 
+ []
+
+
+Overfull \hbox (27.18733pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 Dapp 
+ []
+
+
+Overfull \hbox (13.99994pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 for 
+ []
+
+
+Overfull \hbox (30.77066pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 Smart 
+ []
+
+
+Overfull \hbox (24.02765pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 Auc- 
+ []
+
+
+Overfull \hbox (24.34152pt too wide) in paragraph at lines 17--17
+ \OT1/cmr/bx/n/10 tions 
+ []
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.19 	\HRule
+            \\[1.5cm]
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+! LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.21 	\begin{minipage}{0.4\textwidth}
+                                     
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Undefined control sequence.
+l.23 			\large
+              
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Missing character: There is no A in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no h in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no : in font nullfont!
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 29.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 29.
+! Undefined control sequence.
+l.33 			\large
+              
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+Missing character: There is no P in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no f in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no : in font nullfont!
+
+Overfull \hbox (3276.74998pt too wide) in paragraph at lines 21--38
+ []$[]$ 
+ []
+
+
+Overfull \hbox (3276.74998pt too wide) in paragraph at lines 21--38
+ []$ 
+ []
+
+! Undefined control sequence.
+l.41 	{\large
+             \today}
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+! Undefined control sequence.
+l.41 	{\large\today
+                   }
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+
+! LaTeX Error: \begin{document} ended by \end{titlepage}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.44 \end{titlepage}
+                    
+Your command was ignored.
+Type  I <command> <return>  to replace it with another command,
+or  <return>  to continue without it.
+
+)
+! Emergency stop.
+<*> title.tex
+             
+*** (job aborted, no legal \end found)
+
+ 
+Here is how much of TeX's memory you used:
+ 18 strings out of 492982
+ 253 string characters out of 6134895
+ 54918 words of memory out of 5000000
+ 3682 multiletter control sequences out of 15000+600000
+ 4595 words of font info for 17 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 20i,3n,18p,95b,191s stack positions out of 5000i,500n,10000p,200000b,80000s
+!  ==> Fatal error occurred, no output PDF file produced!

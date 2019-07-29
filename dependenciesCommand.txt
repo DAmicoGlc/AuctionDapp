@@ -1,0 +1,21 @@
+GLOBAL
+npm install --save lite-server              liteserver component
+npm install --save truffle-contract
+npm install --save web3
+
+TEST
+npm install --save bn.js                    bignumber
+npm install --save truffle-assertions       assertions mehods
+
+
+
+
+English BUtton
+
+if (submitting but >5 block mined and winner != account) => dont show the auction
+
+Vicrey Button
+
+if (opening but >5 block mined and winner != account) => dont show the auction
+if (withdraw) => show deposit and reserve
+if (open) => show deposit and reserve

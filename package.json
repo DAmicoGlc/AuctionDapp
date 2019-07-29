@@ -1,0 +1,30 @@
+{
+    "name": "auctiondapp",
+    "version": "1.0.0",
+    "description": "",
+    "main": "truffle.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "dev": "lite-server",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "lite-server": "^2.3.0"
+    },
+    "dependencies": {
+        "animate.css": "^3.7.2",
+        "bn.js": "^5.0.0",
+        "mongodb": "^3.3.0-beta2",
+        "mysql": "^2.17.1",
+        "request": "^2.88.0",
+        "solc": "^0.5.10",
+        "truffle-assertions": "^0.9.1",
+        "truffle-contract": "^4.0.25",
+        "truffle-hdwallet-provider": "^1.0.15",
+        "web3": "^1.0.0-beta.37"
+    }
+}
