@@ -6,10 +6,9 @@ var Vicrey = require('../model/appModelVic.js');
 exports.list_all_english = function (req, res) {
     English.getAllEnglish(function (err, english) {
 
-        console.log('controller')
         if (err)
             res.send(err);
-        console.log('res', english);
+
         res.send(english);
     });
 };
@@ -17,7 +16,6 @@ exports.list_all_english = function (req, res) {
 exports.create_a_english = function (req, res) {
     var new_english = new English(req.body);
 
-    //handles null error 
     if (!new_english.address || !new_english.title 
         || !new_english.description) {
 
@@ -57,10 +55,9 @@ exports.delete_a_english = function (req, res) {
 exports.list_all_vicrey = function (req, res) {
     Vicrey.getAllVicrey(function (err, vicrey) {
 
-        console.log('controller')
         if (err)
             res.send(err);
-        console.log('res', vicrey);
+            
         res.send(vicrey);
     });
 };
@@ -80,6 +77,7 @@ exports.create_a_vicrey = function (req, res) {
 
             if (err)
                 res.send(err);
+
             res.json(result);
         });
     }
@@ -90,6 +88,7 @@ exports.read_a_vicrey = function (req, res) {
     Vicrey.getVicreyById(req.params.vicreyAddress, function (err, vicrey) {
         if (err)
             res.send(err);
+
         res.json(vicrey);
     });
 };
@@ -99,6 +98,7 @@ exports.delete_a_vicrey = function (req, res) {
     Vicrey.remove(req.params.vicreyAddress, function (err, task) {
         if (err)
             res.send(err);
+            
         res.json({ message: 'Vicrey auction successfully deleted' });
     });
 };

@@ -1,506 +1,827 @@
-const VicreyAuction = artifacts.require("VicreyAuction")
-const AuctionManager = artifacts.require("AuctionManager")
-const BN = require("bn.js")
-const truffleAssertions = require("truffle-assertions")
+const VicreyAuction = artifacts.require("VicreyAuction");
+const AuctionManager = artifacts.require("AuctionManager");
+const truffleAssertions = require("truffle-assertions");
+const BN = require("bn.js");
+
 
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+function calculateGasSpent(transaction) {
+    let gasSpent = transaction.receipt.gasUsed;
+    return new BN(gasSpent, 10);
+}
+
+/**
+* Testing the Vicrey auction:
+* 1. 2 commitment from the same address, test the withdraw;
+* 2. Test a commitment lower than the reserve price and No other bids;
+* 3. 3 commitment, the third opening value grather than the second one;
+* 4. Revert conditions.
+* All the testing auctions must be finilized and the pending payment must be extinguished!
+* At the end of each test, the balance of all address involved are controlled!
+*/
 contract("VicreyAuction", async => {
-    let gasPrice
-    let gasPriceBN
+    let gasPrice;       /**< Gas price >*/
+    let gasPriceBN;     /**< Gas price as BigNumber >*/
 
-    const reservePrice = 10
-    const deposit = 100
+    const reservePrice = 10;    /**< Reserve price of the good >*/
+    const depositValue = 50;    /**< Vaule of deposit >*/
 
-    var auctionManager;
+    var addrManager;            /**< Address of the auction manager >*/
+    var contractManager;        /**< Instance of the contract auction manager >*/
 
-    beforeEach(async () => {
-        auctionManager = await AuctionManager.new()
+    var addrSeller;             /**< Address of the auction seller >*/
+    var auctionDeployed;        /**< Instance of the auction deployed >*/
+    var accounts;               /**< Available test accounts >*/
+    var auctionAddressList;     /**< Address of deployed vicrey contract >*/
 
-        gasPrice = await web3.eth.getGasPrice()
-        gasPriceBN = new BN(gasPrice, 10)
-    })
+    /**< Before each test, create an instance of the manager auction contract,
+    * an instance of the vicrey auction, retrieve the gas price and transform it in a BigNumber. >*/
+    beforeEach(async() => {
+        accounts = await web3.eth.getAccounts();
 
+        addrManager = accounts[0];
+        contractManager = await AuctionManager.new({from: addrManager});
 
-    it("Test _deposit transaction", async function () {
-        let accounts = await web3.eth.getAccounts()
+        addrSeller = accounts[1];
 
-        let nonce = "test"
+        /**< Seller deploy the auction contract. >*/
+        await contractManager.createVicreyAuction(
+            reservePrice, depositValue, {from: addrSeller});
 
-        let firstBid = new BN(50, 10)
-        let secondBid = new BN(50, 10)
+        /**< Retrive the address of the active auction from the contract manager. >*/
+        auctionAddressList = await contractManager.getVicreyAuctions.call();
+
+        /**< Retrive the instance of the active auction. >*/
+        auctionDeployed = await VicreyAuction.at(auctionAddressList[0]);
+
+        gasPrice = await web3.eth.getGasPrice();
+        gasPriceBN = new BN(gasPrice, 10);
+    });
+
+    it("Test _Same bid, withdraw", async function () {
+       
+        /**< Create the nonce used to calculate the hash. >*/
+        let nonce = "test";
+
+        /**< Create the 2 different bid value in BigNumber. >*/
+        let firstBid = new BN(50, 10);
+        let failBid = new BN(60, 10);
+        let secondBid = new BN(70, 10);
         
-        let firstHash = web3.utils.soliditySha3(nonce, firstBid)
-        let secondHash = web3.utils.soliditySha3(nonce, secondBid)
+        /**< Calculate the hash value. >*/
+        let firstHash = web3.utils.soliditySha3(nonce, firstBid);
+        let failHash = web3.utils.soliditySha3(nonce, failBid);
+        let secondHash = web3.utils.soliditySha3(nonce, secondBid);
 
-        let tranCostBN_1 = new BN(0, 10)
-        let tranCostBN_2 = new BN(0, 10)
+        /**< Retrive the actual balance of the first involved address. >*/
+        let firstBidderBlcPre = await web3.eth.getBalance(accounts[2]);
+        let firstBidBlcPreBN = new BN(firstBidderBlcPre, 10);
 
-        // Seller dactualPriceeploy the auction contract
-        await auctionManager.createVicreyAuction(
-            reservePrice, deposit, { from: accounts[7] })
-        // deployAuction.logs.forEach(log => console.log("Deploy Event: " + log.args[0]))
+        /**< Retrive the actual balance of the second involved address. >*/
+        let secondBidderBlcPre = await web3.eth.getBalance(accounts[3]);
+        let secondBidBlcPreBN = new BN(secondBidderBlcPre, 10);
 
-        let auctionAddressList = await auctionManager.getAllAuctions.call();
+        /**< Retrive the start block number. >*/
+        let initialBlock = await web3.eth.getBlockNumber();
 
-        let auction = await VicreyAuction.at(auctionAddressList.vicrey[0])
+        /**< Retrive the actual phase. >*/
+        let actualPhase = await auctionDeployed.phase.call();
+        let oldPhase = actualPhase;
 
-        // Skip to commitment phase
-        let initialBlock = await web3.eth.getBlockNumber()
-        let actualPhase = await auction.phase.call()
-        let oldPhase = actualPhase
+        /**< Retrive the actual block number. >*/
+        let block = await web3.eth.getBlockNumber();
 
-        let block = await web3.eth.getBlockNumber()
-
+        /**< Skip to the Commitment phase. >*/
         while (actualPhase != '1') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
 
-        // Make two commintment from different accounts
+        /**< The first free account make the first commitment. >*/
+        let transaction = await auctionDeployed.commit(firstHash, { from: accounts[2], value: depositValue});
 
-        initialBlock = await web3.eth.getBlockNumber()
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN_1 = calculateGasSpent(transaction).mul(gasPriceBN);
 
-        // Get balance of the two different accounts before any transactions
-        let bidderBlcPre_1 = await web3.eth.getBalance(accounts[1])
-        let bidderBlcPre_2 = await web3.eth.getBalance(accounts[2])
+        /**< The second free account make the first commitment. >*/
+        transaction = await auctionDeployed.commit(secondHash, { from: accounts[3], value: depositValue});
 
-        let bidBlcPreBN_1 = new BN(bidderBlcPre_1, 10)
-        let selBlcPreBN_2 = new BN(bidderBlcPre_2, 10)
+        /**< Retrive the start block number. >*/
+        initialBlock = await web3.eth.getBlockNumber();
 
-        // First commitment
-        let transaction = await auction.commit(firstHash, { from: accounts[1], value: deposit})
-        // transaction.logs.forEach(log => console.log("Commit 1 Event: " + log.args[0]))
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN_2 = calculateGasSpent(transaction).mul(gasPriceBN);
+        
+        /**< Retrive the actual balance of the first involved address. >*/
+        let preFail = await web3.eth.getBalance(accounts[2]);
+        /**< Transform it in BigNumber. >*/
+        let preFailBN = new BN(preFail, 10);
 
-        let gasSpent = transaction.receipt.gasUsed
-        let gasSpentBN = new BN(gasSpent, 10)
+        /**< Catch the revert given by the second bid from the actual winner! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.commit(failHash, { from: accounts[2], value: depositValue})
+        );
 
-        tranCostBN_1 = tranCostBN_1.add(gasSpentBN.mul(gasPriceBN))
+        /**< Retrive the actual balance of the first involved address. >*/
+        let postFail = await web3.eth.getBalance(accounts[2]);
+        /**< Transform it in BigNumber. >*/
+        let postFailBN = new BN(postFail, 10);
 
-        // Second commitment
-        transaction = await auction.commit(secondHash, { from: accounts[2], value: deposit})
-        // transaction.logs.forEach(log => console.log("Commit 2 Event: " + log.args[0]))
+        /**< Calculate the gas lost by the failed require. >*/
+        let failRequire = preFailBN.sub(postFailBN);
+        
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
 
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
 
-        tranCostBN_2 = tranCostBN_2.add(gasSpentBN.mul(gasPriceBN))
+        /**< Skip to the Withdrawal phase. >*/
+        while (actualPhase != '2') {
 
-        // Skip to commitment phase
-        initialBlock = await web3.eth.getBlockNumber()
-        actualPhase = await auction.phase.call()
-        oldPhase = actualPhase
-
-        block = await web3.eth.getBlockNumber()
-
-        while (actualPhase != '1') {
-
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
 
-        initialBlock = block;
+        /**< The second free account withdraw its commitment. >*/
+        transaction = await auctionDeployed.withdraw({ from: accounts[3]})
 
-        // The second address withdraw its bid
-        transaction = await auction.withdraw({ from: accounts[2]})
-        // transaction.logs.forEach(log => console.log("Withdraw 2 Event: " + log.args[0]))
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_2 = transConstBN_2.add(calculateGasSpent(transaction).mul(gasPriceBN));
 
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
 
-        tranCostBN_2 = tranCostBN_2.add(gasSpentBN.mul(gasPriceBN))
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
 
-        // Skip to opening phase
-        initialBlock = await web3.eth.getBlockNumber()
-        actualPhase = await auction.phase.call()
-        oldPhase = actualPhase
-
-        block = await web3.eth.getBlockNumber()
-
+        /**< Skip to the Opening phase. >*/
         while (actualPhase != '3') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
-
-        initialBlock = block;
         
-        // The first address open its bid
-        transaction = await auction.openBid(nonce, { from: accounts[1], value: firstBid.toNumber() })
-        // transaction.logs.forEach(log => console.log("Open 1 Event: " + log.args[0]))
+        /**< The first free account open its commitment. >*/
+        transaction = await auctionDeployed.openBid(nonce, { from: accounts[2], value: firstBid })
+    
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_1 = transConstBN_1.add(calculateGasSpent(transaction).mul(gasPriceBN));
 
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
 
-        tranCostBN_1 = tranCostBN_1.add(gasSpentBN.mul(gasPriceBN))
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
 
-        // Skip to finalizing phase
-        initialBlock = await web3.eth.getBlockNumber()
-        actualPhase = await auction.phase.call()
-        oldPhase = actualPhase
-
-        block = await web3.eth.getBlockNumber()
-
+        /**< Skip to the Finilizing phase. >*/
         while (actualPhase != '4') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
 
-        initialBlock = block;
+        /**< Retrieve the actual price of the good. >*/
+        let actualPrice = await auctionDeployed.actualPrice.call();
 
-        let actualPrice = await auction.actualPrice.call()
+        /**< Finilize the auction from the winner address. >*/
+        transaction = await auctionDeployed.finalize({ from: accounts[2] });
 
-        // The seller finalize the auction
-        transaction = await auction.finalize({ from: accounts[7] })
-        // transaction.logs.forEach(log => console.log("Finalize Event: " + log.args[0]))
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_1 = transConstBN_1.add(calculateGasSpent(transaction).mul(gasPriceBN));
 
-        transaction = await auction.transferPending({ from: accounts[1] })
-        // transaction.logs.forEach(log => console.log("transferPending Event: " + log.args[0]))
+        /**< Extinguish the pending payment from the winner address. >*/
+        transaction = await auctionDeployed.transferPending({ from: accounts[2] });
 
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_1 = transConstBN_1.add(calculateGasSpent(transaction).mul(gasPriceBN));
 
-        tranCostBN_1 = tranCostBN_1.add(gasSpentBN.mul(gasPriceBN))
+        /**< Retrive the actual balance of the involved addresses. >*/
+        let firstBidderBlcPost = await web3.eth.getBalance(accounts[2]);
+        let firstBidBlcPostBN = new BN(firstBidderBlcPost, 10);
 
-        // Get balance of the two different accounts after all transactions
-        let bidderBlcPost_1 = await web3.eth.getBalance(accounts[1])
-        let bidderBlcPost_2 = await web3.eth.getBalance(accounts[2])
+        let secondBidderBlcPost = await web3.eth.getBalance(accounts[3]);
+        let secondBidBlcPostBN = new BN(secondBidderBlcPost, 10);
 
-        let bidBlcPostBN_1 = new BN(bidderBlcPost_1, 10)
-        let bidBlcPostBN_2 = new BN(bidderBlcPost_2, 10)
+        let halfDeposit = depositValue/2;
+        let halfDepositBN = new BN(halfDeposit, 10);
 
-        let halfDeposit = deposit/2
-        let halfDepositBN = new BN(halfDeposit, 10)
+        let actualPriceBN = new BN(actualPrice, 10);
+        let resPriceBn = new BN(reservePrice, 10);
 
-        let actualPriceBN = new BN(actualPrice, 10)
+        /**< Calculate the excpected balance difference and check it. >*/
+        let diffFirstBidder = firstBidBlcPreBN.sub(firstBidBlcPostBN.add(transConstBN_1).add(failRequire).add(actualPriceBN));
+        let diffSecondBidder = secondBidBlcPreBN.sub(secondBidBlcPostBN.add(transConstBN_2).add(halfDepositBN));
 
-        // Verify the cost of all transaction of the two different accounts
-        let diffBidder_1 = bidBlcPreBN_1.sub(tranCostBN_1).sub(actualPriceBN).sub(bidBlcPostBN_1)
-        let diffBidder_2 = selBlcPreBN_2.sub(tranCostBN_2).sub(halfDepositBN).sub(bidBlcPostBN_2)
+        assert.equal(actualPriceBN.sub(resPriceBn), '0',
+            "The price must be equal to the reserve price!");
+        assert.equal(diffFirstBidder, '0',
+            "The balance of the first bidder is not correct!");
+        assert.equal(diffSecondBidder, '0',
+            "The balance of the second bidder is not correct!");
 
-        assert.equal(diffBidder_1, '0',
-            "The bidder 1 balance is not correct!")
-        assert.equal(diffBidder_2, '0',
-            "The bidder 2 balance is not correct!")
-    })
+        /**< Check if the auction has been correctly desctructed! >*/
+        let codeAuction = await web3.eth.getCode(auctionAddressList[0]);
 
-    it("Test _Highest Bid and Second highest must change", async function () {
-        let accounts = await web3.eth.getAccounts()
+        assert(codeAuction, '0x', 
+            "The contract has not been desctructed!");
+    });
+
+
+    it("Test _Low commitment, No bids", async function () {
+
+        /**< Create the nonce used to calculate the hash. >*/
+        let nonce = "test";
+
+        /**< Create the 2 different bid value in BigNumber. >*/
+        let firstBid = new BN(5, 10);
         
-        let nonce = "test"
+        /**< Calculate the hash value. >*/
+        let firstHash = web3.utils.soliditySha3(nonce, firstBid);
 
-        let bid_1 = new BN(50, 10)
-        let bid_2 = new BN(80, 10)
-        let bid_3 = new BN(60, 10)
-        let bid_4 = new BN(80, 10)
+        /**< Retrive the start block number. >*/
+        let initialBlock = await web3.eth.getBlockNumber();
 
-        let hash_1 = web3.utils.soliditySha3(nonce, bid_1)
-        let hash_2 = web3.utils.soliditySha3(nonce, bid_2)
-        let hash_3 = web3.utils.soliditySha3(nonce, bid_3)
-        let hash_4 = web3.utils.soliditySha3(nonce, bid_4)
+        /**< Retrive the actual phase. >*/
+        let actualPhase = await auctionDeployed.phase.call();
+        let oldPhase = actualPhase;
 
-        let costBN_1 = new BN(0, 10)
-        let costBN_2 = new BN(0, 10)
-        let costBN_3 = new BN(0, 10)
-        let costBN_4 = new BN(0, 10)
+        /**< Retrive the actual block number. >*/
+        let block = await web3.eth.getBlockNumber();
 
-        // Seller deploy the auction contract
-        await auctionManager.createVicreyAuction(
-            reservePrice, deposit, { from: accounts[7] })
-        // deployAuction.logs.forEach(log => console.log("Deploy Event: " + log.args[0]))
-
-        let auctionAddressList = await auctionManager.getAllAuctions.call();
-
-        let auction = await VicreyAuction.at(auctionAddressList.vicrey[0])
-
-        let actualPhase = await auction.phase.call()
-        let oldPhase = actualPhase
-
-        // Skip to commitment phase
-        let initialBlock = await web3.eth.getBlockNumber()
-        let block = await web3.eth.getBlockNumber()
-
+        /**< Skip to the Fiilizing phase. >*/
         while (actualPhase != '1') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
 
-        // Make two commintment from different accounts
+        /**< The first free account make the commitment. >*/
+        let transaction = await auctionDeployed.commit(firstHash, { from: accounts[2], value: depositValue});
 
-        // Get balance of the two different accounts before any transactions
-        let preBalance_1 = await web3.eth.getBalance(accounts[1])
-        let preBalance_2 = await web3.eth.getBalance(accounts[2])
-        let preBalance_3 = await web3.eth.getBalance(accounts[3])
-        let preBalance_4 = await web3.eth.getBalance(accounts[4])
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
 
-        let preBalanceBN_1 = new BN(preBalance_1, 10)
-        let preBalanceBN_2 = new BN(preBalance_2, 10)
-        let preBalanceBN_3 = new BN(preBalance_3, 10)
-        let preBalanceBN_4 = new BN(preBalance_4, 10)
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
 
-        // First commitment
-        let transaction = await auction.commit(hash_1, { from: accounts[1], value: deposit })
-        // transaction.logs.forEach(log => console.log("Commit_1 Event: " + log.args[0]))
-
-        let gasSpent = transaction.receipt.gasUsed
-        let gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_1 = costBN_1.add(gasSpentBN.mul(gasPriceBN))
-
-        // Second commitment
-        transaction = await auction.commit(hash_2, { from: accounts[2], value: deposit })
-        // transaction.logs.forEach(log => console.log("Commit_2 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_2 = costBN_2.add(gasSpentBN.mul(gasPriceBN))
-
-        // Third commitment
-        transaction = await auction.commit(hash_3, { from: accounts[3], value: deposit })
-        // transaction.logs.forEach(log => console.log("Commit_3 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_3 = costBN_3.add(gasSpentBN.mul(gasPriceBN))
-
-        // Forth commitment
-        transaction = await auction.commit(hash_4, { from: accounts[4], value: deposit })
-        // transaction.logs.forEach(log => console.log("Commit_4 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_4 = costBN_4.add(gasSpentBN.mul(gasPriceBN))
-
-        actualPhase = await auction.phase.call()
-        oldPhase = actualPhase
-
-        block = await web3.eth.getBlockNumber()
-
+        /**< Skip to the Opening phase. >*/
         while (actualPhase != '3') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
-
-        // The first address open its bid
-        transaction = await auction.openBid(nonce, { from: accounts[1], value: bid_1.toNumber() })
-        // transaction.logs.forEach(log => console.log("Open_1 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_1 = costBN_1.add(gasSpentBN.mul(gasPriceBN))
-
-        // The second address open its bid
-        transaction = await auction.openBid(nonce, { from: accounts[2], value: bid_2.toNumber() })
-        // transaction.logs.forEach(log => console.log("Open_2 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_2 = costBN_2.add(gasSpentBN.mul(gasPriceBN))
-
-        // The third address open its bid
-        transaction = await auction.openBid(nonce, { from: accounts[3], value: bid_3.toNumber() })
-        // transaction.logs.forEach(log => console.log("Open_3 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_3 = costBN_3.add(gasSpentBN.mul(gasPriceBN))
-
-        // The forth address open its bid
-        transaction = await auction.openBid(nonce, { from: accounts[4], value: bid_4.toNumber() })
-        // transaction.logs.forEach(log => console.log("Open_4 Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_4 = costBN_4.add(gasSpentBN.mul(gasPriceBN))
-
-        // Skip to finalizing phase
-        block = await web3.eth.getBlockNumber()
-        while (block < initialBlock + 5) {
-            await timeout(2000)
-            block = await web3.eth.getBlockNumber()
-        }
-
-        initialBlock = block;
-
-        let actualPrice = await auction.actualPrice.call()
-        let actualPriceBN = new BN(actualPrice, 10)
-
-        // The seller finalize the auction
-        transaction = await auction.finalize({ from: accounts[7] })
-        // transaction.logs.forEach(log => console.log("Finalize Event: " + log.args[0]))
-
-        transaction = await auction.transferPending({ from: accounts[2] })
-        // transaction.logs.forEach(log => console.log("transferPending Event: " + log.args[0]))
-
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
-
-        costBN_2 = costBN_2.add(gasSpentBN.mul(gasPriceBN))
-
-        // Get balance of the two different accounts after all transactions
-        let postBalance_1 = await web3.eth.getBalance(accounts[1])
-        let postBalance_2 = await web3.eth.getBalance(accounts[2])
-        let postBalance_3 = await web3.eth.getBalance(accounts[3])
-        let postBalance_4 = await web3.eth.getBalance(accounts[4])
-
-        let postBalanceBN_1 = new BN(postBalance_1, 10)
-        let postBalanceBN_2 = new BN(postBalance_2, 10)
-        let postBalanceBN_3 = new BN(postBalance_3, 10)
-        let postBalanceBN_4 = new BN(postBalance_4, 10)        
-
-        // Verify the cost of all transaction of the two different accounts
-        let diffBidder_1 = preBalanceBN_1.sub(costBN_1).sub(postBalanceBN_1)
-        let diffBidder_2 = preBalanceBN_2.sub(costBN_2).sub(postBalanceBN_2).sub(actualPriceBN)
-        let diffBidder_3 = preBalanceBN_3.sub(costBN_3).sub(postBalanceBN_3)
-        let diffBidder_4 = preBalanceBN_4.sub(costBN_4).sub(postBalanceBN_4)
-
-        assert.equal(diffBidder_1, '0',
-            "The bidder 1 balance is not correct!")
-        assert.equal(diffBidder_2, '0',
-            "The bidder 2 balance is not correct!")
-        assert.equal(diffBidder_3, '0',
-            "The bidder 3 balance is not correct!")
-        assert.equal(diffBidder_4, '0',
-            "The bidder 4 balance is not correct!")
-    })
-
-    it("Test _No bids", async function () {
-        let accounts = await web3.eth.getAccounts()
-
-        // Seller deploy the auction contract
-        let deployAuction = await auctionManager.createVicreyAuction(
-            reservePrice, deposit, { from: accounts[7] })
-        // deployAuction.logs.forEach(log => console.log("Deploy Event: " + log.args[0]))
-
-        let gasSpent = deployAuction.receipt.gasUsed
-        let gasSpentBN = new BN(gasSpent, 10)
-
-        let deployCostBN = gasSpentBN.mul(gasPriceBN)
-
-        let auctionAddressList = await auctionManager.getAllAuctions.call();
-
-        let auction = await VicreyAuction.at(auctionAddressList.vicrey[0])
         
-        let actualPhase = await auction.phase.call()
-        let oldPhase = actualPhase
+        /**< Catch the revert given by a bid value lower than the reserve price! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.openBid(nonce, { from: accounts[2], value: firstBid})
+        );
 
-        // Skip to commitment phase
-        let initialBlock = await web3.eth.getBlockNumber()
-        let block = await web3.eth.getBlockNumber()
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
 
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Finilizing phase. >*/
         while (actualPhase != '4') {
 
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
             while (block < initialBlock + 5) {
-                await timeout(2000)
-                block = await web3.eth.getBlockNumber()
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
             }
 
-            await auction.nextPhase({ from: accounts[7] })
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
 
-            actualPhase = await auction.phase.call()
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
 
+            /**< Check if the phase is changed. >*/
             if (actualPhase != oldPhase) {
-                initialBlock = block
-                oldPhase = actualPhase
+                initialBlock = block;
+                oldPhase = actualPhase;
             }
         }
 
-        let sellerBlcPre = await web3.eth.getBalance(accounts[7])
-        let selBlcPerBN = new BN(sellerBlcPre, 10)
+        /**< Retrive the actual balance of the first involved address. >*/
+        let sellerBlcPre = await web3.eth.getBalance(addrSeller);
+        let selBlcPerBN = new BN(sellerBlcPre, 10);
+        
+        /**< Finilize the auction from the seller address. >*/
+        transaction = await auctionDeployed.finalize({ from: addrSeller });
 
-        let transaction = await auction.finalize({ from: accounts[7] })
-        // transaction.logs.forEach(log => console.log("Finalize Event: " + log.args[0]))
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN = calculateGasSpent(transaction).mul(gasPriceBN);
 
-        gasSpent = transaction.receipt.gasUsed
-        gasSpentBN = new BN(gasSpent, 10)
+        /**< Retrive the actual balance of the seller address. >*/
+        let sellerBlcPost = await web3.eth.getBalance(addrSeller);
+        let selBlcPostBN = new BN(sellerBlcPost, 10);
 
-        let transConstBN = gasSpentBN.mul(gasPriceBN)
+        let diffSeller = selBlcPerBN.sub(transConstBN).sub(selBlcPostBN);
 
-        let sellerBlcPost = await web3.eth.getBalance(accounts[7])
-        let selBlcPostBN = new BN(sellerBlcPost, 10)
+        assert(diffSeller, '0', 
+            "The seller must spend only the cost of the finilize transaction");
 
-        let diffSeller = selBlcPerBN.sub(transConstBN).sub(selBlcPostBN).sub(deployCostBN)
+        /**< Check if the auction has been correctly desctructed! >*/
+        let codeAuction = await web3.eth.getCode(auctionAddressList[0]);
 
-        assert(diffSeller, '0',
-            "The seller must spent only the cost of the function")
-    })
+        assert(codeAuction, '0x', 
+            "The contract has not been desctructed!");
+    });
+
+    it("Test _3 different bid, the second lower than the third!", async function () {
+
+        /**< Create the nonce used to calculate the hash. >*/
+        let nonce = "test";
+
+        /**< Create the 3different bid value in BigNumber. >*/
+        let firstBid = new BN(50, 10);
+        let secondBid = new BN(80, 10);
+        let thirdBid = new BN(70, 10);
+        
+        /**< Calculate the hash value. >*/
+        let firstHash = web3.utils.soliditySha3(nonce, firstBid);
+        let secondHash = web3.utils.soliditySha3(nonce, secondBid);
+        let thirdHash = web3.utils.soliditySha3(nonce, thirdBid);
+
+        /**< Retrive the actual balance of the first involved address. >*/
+        let firstBidderBlcPre = await web3.eth.getBalance(accounts[2]);
+        let firstBidBlcPreBN = new BN(firstBidderBlcPre, 10);
+
+        /**< Retrive the actual balance of the second involved address. >*/
+        let secondBidderBlcPre = await web3.eth.getBalance(accounts[3]);
+        let secondBidBlcPreBN = new BN(secondBidderBlcPre, 10);
+
+        /**< Retrive the actual balance of the third involved address. >*/
+        let thirdBidderBlcPre = await web3.eth.getBalance(accounts[4]);
+        let thirdBidBlcPreBN = new BN(thirdBidderBlcPre, 10);
+
+        /**< Retrive the start block number. >*/
+        let initialBlock = await web3.eth.getBlockNumber();
+
+        /**< Retrive the actual phase. >*/
+        let actualPhase = await auctionDeployed.phase.call();
+        let oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        let block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Commitment phase. >*/
+        while (actualPhase != '1') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< The first free account make the first commitment. >*/
+        let transaction = await auctionDeployed.commit(firstHash, { from: accounts[2], value: depositValue});
+
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN_1 = calculateGasSpent(transaction).mul(gasPriceBN);
+
+        /**< The second free account make the second commitment. >*/
+        transaction = await auctionDeployed.commit(secondHash, { from: accounts[3], value: depositValue});
+
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN_2 = calculateGasSpent(transaction).mul(gasPriceBN);
+
+        /**< The third free account make the third commitment. >*/
+        transaction = await auctionDeployed.commit(thirdHash, { from: accounts[4], value: depositValue});
+
+        /**< Calculate the gas spent for the transaction. >*/
+        let transConstBN_3 = calculateGasSpent(transaction).mul(gasPriceBN);
+
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Opening phase. >*/
+        while (actualPhase != '3') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< The first free account open its commitment. >*/
+        transaction = await auctionDeployed.openBid(nonce, { from: accounts[2], value: firstBid })
+    
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_1 = transConstBN_1.add(calculateGasSpent(transaction).mul(gasPriceBN));
+
+        /**< The second free account open its commitment. >*/
+        transaction = await auctionDeployed.openBid(nonce, { from: accounts[3], value: secondBid })
+    
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_2 = transConstBN_2.add(calculateGasSpent(transaction).mul(gasPriceBN));
+
+        /**< The third free account open its commitment. >*/
+        transaction = await auctionDeployed.openBid(nonce, { from: accounts[4], value: thirdBid })
+    
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_3 = transConstBN_3.add(calculateGasSpent(transaction).mul(gasPriceBN));
+
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Finilizing phase. >*/
+        while (actualPhase != '4') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< Retrieve the actual price of the good. >*/
+        let actualPrice = await auctionDeployed.actualPrice.call();
+
+        /**< Finilize the auction from the winner address. >*/
+        transaction = await auctionDeployed.finalize({ from: accounts[3] });
+
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_2 = transConstBN_2.add(calculateGasSpent(transaction).mul(gasPriceBN));
+
+        /**< Extinguish the pending payment from the winner address. >*/
+        transaction = await auctionDeployed.transferPending({ from: accounts[3] });
+
+        /**< Calculate the gas spent for the transaction. >*/
+        transConstBN_2 = transConstBN_2.add(calculateGasSpent(transaction).mul(gasPriceBN));
+
+        /**< Retrive the actual balance of the involved addresses. >*/
+        let firstBidderBlcPost = await web3.eth.getBalance(accounts[2]);
+        let firstBidBlcPostBN = new BN(firstBidderBlcPost, 10);
+
+        let secondBidderBlcPost = await web3.eth.getBalance(accounts[3]);
+        let secondBidBlcPostBN = new BN(secondBidderBlcPost, 10);
+
+        let thirdBidderBlcPost = await web3.eth.getBalance(accounts[4]);
+        let thirdBidBlcPostBN = new BN(thirdBidderBlcPost, 10);
+
+        let actualPriceBN = new BN(actualPrice, 10);
+
+        /**< Calculate the excpected balance difference and check it. >*/
+        let diffFirstBidder = firstBidBlcPreBN.sub(firstBidBlcPostBN.add(transConstBN_1));
+        let diffSecondBidder = secondBidBlcPreBN.sub(secondBidBlcPostBN.add(transConstBN_2).add(actualPriceBN));
+        let diffThirdBidder = thirdBidBlcPreBN.sub(thirdBidBlcPostBN.add(transConstBN_3));
+
+        assert.equal(actualPriceBN.sub(thirdBid), '0',
+            "The price must be equal to the second highest bid!");
+        assert.equal(diffFirstBidder, '0',
+            "The balance of the first bidder is not correct!");
+        assert.equal(diffSecondBidder, '0',
+            "The balance of the second bidder is not correct!");
+        assert.equal(diffThirdBidder, '0',
+            "The balance of the third bidder is not correct!");
+
+        /**< Check if the auction has been correctly desctructed! >*/
+        let codeAuction = await web3.eth.getCode(auctionAddressList[0]);
+
+        assert(codeAuction, '0x', 
+            "The contract has not been desctructed!");
+    });
+
+
+    it("Test _Revert: out right phase, no deposit, can interact, can finilize, can pending, no in auction open and withdraw", async function() {
+        /**< Create the nonce used to calculate the hash. >*/
+        let nonce = "test";
+
+        /**< Create the 3different bid value in BigNumber. >*/
+        let bid = new BN(50, 10);
+
+        /**< Calculate the hash value. >*/
+        let hash = web3.utils.soliditySha3(nonce, bid);
+
+        /**< Catch the revert given by making a bid out of the right phase! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.commit(hash, { from: accounts[2], value: depositValue})
+        );
+
+        /**< Retrive the start block number. >*/
+        let initialBlock = await web3.eth.getBlockNumber();
+
+        /**< Retrive the actual phase. >*/
+        let actualPhase = await auctionDeployed.phase.call();
+        let oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        let block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Commitment phase. >*/
+        while (actualPhase != '1') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< Catch the revert given by seller making a bid! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.commit(hash, { from: addrSeller, value: depositValue})
+        );
+
+        /**< Catch the revert given by manager making a bid! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.commit(hash, { from: addrManager, value: depositValue })
+        );
+
+        /**< Catch the revert given by making a bid without sending the deposit! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.commit(hash, { from: accounts[2]})
+        );
+
+        /**< Commit a bid! >*/
+        auctionDeployed.commit(hash, { from: accounts[2], value: depositValue });
+
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Withdraw phase. >*/
+        while (actualPhase != '2') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< Catch the revert given by withdrawing a bid without committing one! >*/
+        await truffleAssertions.fails(
+           auctionDeployed.withdraw({ from: accounts[3]})
+        );
+
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Opening phase. >*/
+        while (actualPhase != '3') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< Catch the revert given by opening a bid without committing one! >*/
+         await truffleAssertions.fails(
+            auctionDeployed.openBid(nonce, { from: accounts[3], value: bid})
+        );
+
+        /**< Catch the revert given by opening a bid witha different nonce! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.openBid("wrongNonce", { from: accounts[2], value: bid})
+        );
+
+        /**< Open the bid. >*/
+        auctionDeployed.openBid(nonce, { from: accounts[2], value: bid}),
+
+        /**< Retrive the actual phase. >*/
+        actualPhase = await auctionDeployed.phase.call();
+        oldPhase = actualPhase;
+
+        /**< Retrive the actual block number. >*/
+        block = await web3.eth.getBlockNumber();
+
+        /**< Skip to the Finilizing phase. >*/
+        while (actualPhase != '4') {
+
+            /**< Loop until 5 block are mined, waiting 5 second for each loop. >*/
+            while (block < initialBlock + 5) {
+                await timeout(5000);
+                block = await web3.eth.getBlockNumber();
+            }
+
+            /**< Go to the next phase. >*/
+            await auctionDeployed.nextPhase({ from: addrSeller });
+
+            /**< Retrive the actual phase. >*/
+            actualPhase = await auctionDeployed.phase.call();
+
+            /**< Check if the phase is changed. >*/
+            if (actualPhase != oldPhase) {
+                initialBlock = block;
+                oldPhase = actualPhase;
+            }
+        }
+
+        /**< Catch the revert given by not winner or seller or manager finilize the auction! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.finalize({ from: accounts[4]})
+        );
+        
+        /**< Finilize the auction! >*/
+        auctionDeployed.finalize({ from: accounts[2]});
+
+        /**< Catch the revert given by not winner extinguish the pending payment! >*/
+        await truffleAssertions.fails(
+            auctionDeployed.transferPending({ from: accounts[4]})
+        );
+        
+        /**< Extiguish the pending payment! >*/
+        auctionDeployed.transferPending({ from: accounts[2]});
+
+        /**< Check if the auction has been correctly desctructed! >*/
+        let codeAuction = await web3.eth.getCode(auctionAddressList[0]);
+
+        assert(codeAuction, '0x', 
+            "The contract has not been desctructed!");
+    });
 })

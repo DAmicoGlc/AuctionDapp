@@ -9,9 +9,10 @@ const mysql = require('mysql');
 var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'mypassword',
     database: 'AuctionList'
 });
+
 // connect to database
 connection.connect();
 app.use(cors());

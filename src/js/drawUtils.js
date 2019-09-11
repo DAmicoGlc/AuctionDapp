@@ -8,36 +8,34 @@ function managerCardSuspended(auction, card, phase, diff, address, type) {
     card.find('.card-body').find('h6')
         .append(phase);
 
-    /** < Show the actual winner address */
+    /** < Show the winner address */
     card.find('.card-body').find('.list-group')
-        .append('<li class="list-group-item">Actual Winner: <span class="badge badge-info float-right mt-1" '
-            + 'id="badgeActualWinner" >' + auction['actualWinner'].slice(0, 6) + '...' 
-            + auction['actualWinner'].slice(account.length - 6) 
-            + ' </span></li><button class="btn btn-warning btn-sm float-right" '
-            + 'onclick="var dummyContent = "'+ auction['actualWinner']+'"; \
-            var dummy = $("<input>").val(dummyContent).appendTo("body").select(); \
-            document.execCommand("copy");"><i class="fa fa-copy"></i></button>');
+        .append('<li class="list-group-item">Actual Winner: <span class="'
+            + 'badge badge-info float-right mt-1" style="cursor: pointer;"'
+            + 'id="badgeActualWinner" onclick="showAddressModal(\'' + auction['winner']
+            + '\'); return false;">' + auction['winner'].slice(0, 6) + '...' 
+            + auction['winner'].slice(auction['winner'].length - 6) + ' </span></li>');
 
-    /** < Show the actual winner address */
+    /** < Show the seller address */
     card.find('.card-body').find('.list-group')
-        .append('<li class="list-group-item">Seller: <span class="badge badge-info float-right mt-1" '
-            + 'id="badgeActualWinner" >' + auction['seller'].slice(0, 6) + '...'
-            + auction['seller'].slice(account.length - 6)
-            + ' </span></li><button class="btn btn-warning btn-sm float-right" '
-            + 'onclick="var dummyContent = "' + auction['seller'] + '"; \
-            var dummy = $("<input>").val(dummyContent).appendTo("body").select(); \
-            document.execCommand("copy");"><i class="fa fa-copy"></i></button>');
+        .append('<li class="list-group-item">Seller: <span class="'
+            + 'badge badge-info float-right mt-1" style="cursor: pointer;"'
+            + 'id="badgeActualWinner" onclick="showAddressModal(\'' + auction['seller']
+            + '\'); return false;">' + auction['seller'].slice(0, 6) + '...'
+            + auction['seller'].slice(auction['seller'].length - 6) + '</span></li>');
 
     if (auction['phase'] == 'Finilizing Phase')
         /** < Show the finilizig button */
         card.find('.card-body')
             .append('<button type="button" class="btn btn-outline-success mt-2 "'
-            + ' onclick="App.finilizeManager(\'' + address + '\',\'' + type + '\')">Finilize</button>');
+            + ' onclick="finilize(\'' + address + '\',\'' 
+            + type + '\', \'man\');">Finilize</button>');
     else
         /** < Show the nextPhase button */
         card.find('.card-body')
             .append('<button type="button" class="btn btn-outline-primary mt-2"'
-            + ' onclick="App.nextPhaseManager(\'' + address + '\',\'' + type + '\')"">Next Phase</button>');
+            + ' onclick="nextPhase(\'' + address + '\',\'' + type + '\','
+            + ' \'man\');">Next Phase</button>');
     
     /** < Show suspending time */
     card.find('.card-footer').find('small')
@@ -52,33 +50,29 @@ function managerCardPending(auction, card, diff, address, type) {
 
     /** < Show the actual winner address */
     card.find('.card-body').find('.list-group')
-        .append('<li class="list-group-item">Actual Winner: <span class="badge badge-info float-right mt-1" '
-            + 'id="badgeActualWinner" >' + auction['actualWinner'].slice(0, 6) + '...'
-            + auction['actualWinner'].slice(account.length - 6)
-            + ' </span></li><button class="btn btn-warning btn-sm float-right" '
-            + 'onclick="var dummyContent = "' + auction['actualWinner'] + '"; \
-            var dummy = $("<input>").val(dummyContent).appendTo("body").select(); \
-            document.execCommand("copy");"><i class="fa fa-copy"></i></button>');
+        .append('<li class="list-group-item">Actual Winner: <span class="'
+            + 'badge badge-info float-right mt-1" style="cursor: pointer;"'
+            + 'id="badgeActualWinner" onclick="showAddressModal(\'' + auction['winner']
+            + '\'); return false;">' + auction['winner'].slice(0, 6) + '...'
+            + auction['winner'].slice(auction['winner'].length - 6) + ' </span></li>');
 
     /** < Show the actual winner address */
     card.find('.card-body').find('.list-group')
-        .append('<li class="list-group-item">Seller: <span class="badge badge-info float-right mt-1" '
-            + 'id="badgeActualWinner" >' + auction['seller'].slice(0, 6) + '...'
-            + auction['seller'].slice(account.length - 6)
-            + ' </span></li><button class="btn btn-warning btn-sm float-right" '
-            + 'onclick="var dummyContent = "' + auction['seller'] + '"; \
-            var dummy = $("<input>").val(dummyContent).appendTo("body").select(); \
-            document.execCommand("copy");"><i class="fa fa-copy"></i></button>');
+        .append('<li class="list-group-item">Seller: <span class="'
+            + 'badge badge-info float-right mt-1" style="cursor: pointer;"'
+            + 'id="badgeActualWinner" onclick="showAddressModal("' + auction['seller']
+            + '"); return false;">' + auction['seller'].slice(0, 6) + '...'
+            + auction['seller'].slice(auction['seller'].length - 6) + ' </span></li>');
 
     /** < Show the pending button */
     if (diff.cmp(new BN(1440)) > 0)
         card.find('.card-body')
             .append('<button type="button" class="btn btn-outline-warning mt-2"'
-            + ' onclick="App.extinguishManager(\'' + address + '\',\'' + type + '\')">Extinguish</button>');
+            + ' onclick="exePending(\'' + address + '\',\'' + type + '\');">Extinguish</button>');
     else
         card.find('.card-body')
             .append('<button type="button" class="btn btn-outline-warning mt-2"'
-            + ' onclick="App.extinguishManager(\'' + address + '\', \'' + type + '\'))" disabled>Extinguish</button>');
+            + ' onclick="exePending(\'' + address + '\', \'' + type + '\');" disabled>Extinguish</button>');
 
 
     card.find('.card-footer').find('small')
@@ -119,19 +113,19 @@ function newCardOwnVic(auction, card, phase, nextPhase, actualBlock) {
     if (auction['phase'] <= 3) {
         /** < Show next phase button and enable it if 5 block have been mined */
         if (nextPhase > 0) {
-            nextPhaseButton(card, false, 'vic');
+            nextPhaseButton(card, false, 'vic', 'user');
             card.find('.card-footer').find('small')
                 .text('Last Phase change > 5 blocks ago! You CAN change it!');
         }
         else if (nextPhase == 0) {
-            nextPhaseButton(card, true, 'vic');
+            nextPhaseButton(card, true, 'vic', 'user');
             
             card.find('.card-footer').find('small')
-                .text('Last Phase change ' + (actualBlock.sub(auction['blockCount'])).toString()
+                .text('The auction has been created ' + (actualBlock.sub(auction['blockCount'])).toString()
                     + ' blocks ago! You CANNOT change it!');
         }
         else {
-            nextPhaseButton(card, false, 'vic');
+            nextPhaseButton(card, false, 'vic', 'user');
             card.find('.card-footer').find('small')
                 .text('Last Phase change is undefined! Pushing '
                     + 'the button could change the phase OR throw a transaction error!');
@@ -140,7 +134,7 @@ function newCardOwnVic(auction, card, phase, nextPhase, actualBlock) {
     /** < If the phase is finilizing */
     else if (auction['phase'] == 4) {
         /** < Show the Finilize buttton */
-        finilizeButton(card, 'vic');
+        finilizeButton(card, 'vic', 'user');
 
         if (auction['actualWinner'] == 0) {
             card.find('.card-footer').find('small')
@@ -321,9 +315,10 @@ function newCardOpenVic(auction, card, phase, nextPhase, actualBlock) {
             .text('Last Phase change > 5 blocks ago! Opening will change the phase');
     }
     else if (nextPhase == 0) {
+        let diff = actualBlock.sub(auction['blockCount']);
         card.find('.card-footer').find('small')
             .text('Last Phase change '
-                + (actualBlock.sub(auction['blockCount'])).toString()
+                + diff.toString()
                 + ' blocks ago!');
     }
     else {
@@ -359,19 +354,32 @@ function newCardOwnEng(auction, card, phase, nextPhase, actualBlock) {
     if (auction['phase'] <= 1) {
         /** < Show next phase button and enable it if 5 block have been mined */
         if (nextPhase > 0) {
-            nextPhaseButton(card, false, 'eng');
-            card.find('.card-footer').find('small')
-                .text('Last Phase change > 5 blocks ago! You CAN change it!');
+            nextPhaseButton(card, false, 'eng', 'user');
+            if (auction['phase'] == 0) {
+                card.find('.card-footer').find('small')
+                    .text('Auction creation > 5 blocks ago! You CAN change it!');
+            }
+            else {
+                card.find('.card-footer').find('small')
+                    .text('Last Phase change > 5 blocks ago! You CAN change it!');
+            }
         }
         else if (nextPhase == 0) {
-                nextPhaseButton(card, true, 'eng');
+                nextPhaseButton(card, true, 'eng', 'user');
                 
-                card.find('.card-footer').find('small')
-                    .text('Last Phase change ' + (actualBlock.sub(auction['blockCount'])).toString()
-                    + ' blocks ago! You CANNOT change it!');
+                if (auction['phase'] == 0) {
+                    card.find('.card-footer').find('small')
+                        .text('Auction creation ' + (actualBlock.sub(auction['blockCount'])).toString()
+                        + ' blocks ago! You CANNOT change it!');
+                }
+                else {
+                    card.find('.card-footer').find('small')
+                        .text('Last Phase change ' + (actualBlock.sub(auction['blockCount'])).toString()
+                        + ' blocks ago! You CANNOT change it!');
+                }
         }
         else {
-            nextPhaseButton(card, false, 'eng');
+            nextPhaseButton(card, false, 'eng', 'user');
             card.find('.card-footer').find('small')
                 .text('Last Phase change is undefined! Pushing ' 
                 + 'the button could change the phase OR throw a transaction error!');
@@ -380,7 +388,7 @@ function newCardOwnEng(auction, card, phase, nextPhase, actualBlock) {
     /** < If the phase is finilizing */
     else if (auction['phase'] == 2) {
         /** < Show the Finilize buttton */
-        finilizeButton(card, 'eng');
+        finilizeButton(card, 'eng', 'user');
 
         if (auction['actualWinner'] == 0) {
             card.find('.card-footer').find('small')
@@ -518,7 +526,7 @@ function newCardFinilize(auction, card, phase, type) {
         .append('<li class="list-group-item">You win the auction, you can finilize it!</li>');
 
     /** < Show the finilize button */
-    finilizeButton(card, type);
+    finilizeButton(card, type, 'user');
 
     if (phase != 'Finilizing Phase') {
         card.find('.card-footer').find('small')
@@ -551,11 +559,11 @@ function newCardPending(auction, card, actualBlock, type) {
  ***********************************************/
 
 /** < Create next phase button and attach it to the card */
-function nextPhaseButton(card, disabled, type) {
+function nextPhaseButton(card, disabled, type, from) {
     card.find('.card-body')
         .append('<button type="button" class="btn btn-outline-primary mt-2"' 
-        +' onclick="App.nextPhase($(this).closest(\'.cardTemplate\').attr(\'id\'), \''
-        + type +'\'); return false;">Next Phase</button>');
+        +' onclick="nextPhase($(this).closest(\'.cardTemplate\').attr(\'id\'), \''
+        + type +'\', \''+ from +'\'); return false;">Next Phase</button>');
 
     if (disabled)
         card.find('.card-body').find('button:last')
@@ -563,19 +571,19 @@ function nextPhaseButton(card, disabled, type) {
 }
 
 /** < Create finilize button and attach it to the card */
-function finilizeButton(card, type) {
+function finilizeButton(card, type, from) {
     card.find('.card-body')
         .append('<button type="button" class="btn btn-outline-success mt-2 "'
-        + ' onclick="App.finilizeAuction($(this).closest(\'.cardTemplate\').attr(\'id\'), \''+type+'\'); return false;"'
-        + ' >Finilize</button>');
+        + ' onclick="finilize($(this).closest(\'.cardTemplate\').attr(\'id\'), \''
+        + type+'\', \''+ from +'\'); return false;" >Finilize</button>');
 }
 
 /** < Create pending button and attach it to the card */
 function pendingButton(card, type) {
     card.find('.card-body')
         .append('<button type="button" class="btn btn-outline-warning mt-2"' 
-        + ' onclick="App.extinguishAuction($(this).closest(\'.cardTemplate\').attr(\'id\'), \'' + type + '\'); return false;"' 
-        + '>Extinguish</button>');
+        + ' onclick="exePending($(this).closest(\'.cardTemplate\').attr(\'id\'), \'' + type + '\''
+        + '); return false;">Extinguish</button>');
 }
 
 /** < Create makeBid button and attach it to the card */
@@ -587,8 +595,8 @@ function makeBidButton(card) {
         .append('<div class="input-group-prepend"></div>');
     card.find('.card-body').find('.input-group').find('.input-group-prepend')
         .append('<button type="button" class="btn btn-outline-primary"'
-        + ' onclick="App.makeBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
-        + ' >Bid</button>');
+        + ' onclick="makeBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
+        + ' >Submit</button>');
 
     card.find('.card-body').find('.input-group')
         .append('<input type="text" class="form-control" placeholder=""'
@@ -602,7 +610,7 @@ function makeBidButton(card) {
         + '<option value="wei">W</option></select>');
 
     card.find('.card-body')
-        .append('<span class="text-muted text-center float-left">*E= ether, W= Wei</span>');
+        .append('<small class="text-muted text-center float-left">*E= ether, W= Wei</small>');
 }
 
 /** < Create buyOut button and attach it to the card */
@@ -613,11 +621,18 @@ function buyoutButton(card) {
     card.find('.card-body').find('.input-group')
         .append('<div class="input-group-prepend"></div>');
     card.find('.card-body').find('.input-group').find('.input-group-prepend')
-        .append('<button type="button" class="btn btn-outline-primary">Buy Now</button>');
+        .append('<button type="button" class="btn btn-outline-primary"'
+        + ' onclick="buyOut($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
+        + ' >Buy Now</button>');
 }
 
 /** < Create commit button and attach it to the card */
 function commitButton(card) {
+    card.find('.card-body').find('.list-group')
+        .append('<li class="list-group-item"><button type="button" class="w-100 btn btn-primary mt-2" data-toggle="modal" data-target="#sha3Modal">'
+        + 'Compute Keccak256</button><small class="text-muted text-center">'
+        + 'Compute the hash here!</small></li>');
+
     card.find('.card-body')
         .append('<div class="input-group mb-3 mt-2"></div>');
 
@@ -625,28 +640,21 @@ function commitButton(card) {
         .append('<div class="input-group-prepend"></div>');
     card.find('.card-body').find('.input-group').find('.input-group-prepend')
         .append('<button type="button" class="btn btn-outline-primary"'
-        + ' onclick="App.commitBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
+        + ' onclick="commitBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
         + '>Commit</button>');
 
     card.find('.card-body').find('.input-group')
-        .append('<input type="text" class="form-control" placeholder="hash...">');
+        .append('<input type="text" style="width: 70%;" class="form-control" placeholder="hash...">');
     card.find('.card-body').find('.input-group')
-        .append('<span class="text-muted text-center">'
-        + '*keccak256(nonce+bid), the bid expressed in wei!</span>');
-
-    card.find('.card-body').find('.input-group')
-        .append('<button type="button" class="btn btn-primary mt-2" data-toggle="modal" data-target="#sha3Modal">'
-        +'Compute Keccak256</button>');
-    card.find('.card-body').find('.input-group')
-        .append('<span class="text-muted text-center">'
-            + 'Compute the hash here!</span>');
+        .append('<small class="text-muted text-center">'
+        + '*keccak256(nonce+bid), the bid expressed in wei!</small>');
 }
 
 /** < Create withDraw button and attach it to the card */
 function withDrawButton(card) {
     card.find('.card-body')
         .append('<button type="button" class="btn btn-outline-danger mt-2"'
-            + ' onclick="App.withdrawBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
+            + ' onclick="withdrawBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
             + '>Withdraw</button>');
 }
 
@@ -660,7 +668,7 @@ function openBidButton(card) {
         .append('<div class="input-group-prepend"></div>');
 
     card.find('.card-body').find('#nonceOpen').find('.input-group-prepend')
-        .append('<span class="input-group-text">Nonce</span>');
+        .append('<small class="input-group-text">Nonce</small>');
 
     card.find('.card-body').find('#nonceOpen')
         .append('<input type="text" class="form-control" placeholder="Nonce">');
@@ -673,7 +681,7 @@ function openBidButton(card) {
         .append('<div class="input-group-prepend"></div>');
 
     card.find('.card-body').find('#bidOpen').find('.input-group-prepend')
-        .append('<span class="input-group-text">Bid</span>');
+        .append('<small class="input-group-text">Bid</small>');
 
     card.find('.card-body').find('#bidOpen')
         .append('<input type="text" class="form-control" placeholder="Amount">');
@@ -689,7 +697,7 @@ function openBidButton(card) {
     /**< OpenBid Button */
     card.find('.card-body')
         .append('<button type="button" class="btn btn-outline-primary"'
-            + ' onclick="App.openBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
+            + ' onclick="openBid($(this).closest(\'.cardTemplate\').attr(\'id\')); return false;"'
             + '>Open</button>');
 }
 

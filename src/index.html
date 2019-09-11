@@ -47,23 +47,20 @@
                     alt="">
                AuctManager
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo01"
-                aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
         </nav>
     </header>
 
     <div class="container" style="padding-top: 60px;">
+        <!-- ACCOUNT INFORMATION -->
         <div class="row">
-            <div class="col-xs-12 col-sm-12">
+            <div class="col-xs-12 col-sm-12" id="accountInfo">
                 <p>Address: <span id="userAddress" class="badge badge-success"></span></p>
                 <p>Balance: <span id="userBalance" class="badge badge-success"></span></p>
+                <hr />
             </div>
         </div>
         <div class="row">
-            <div class="col-xs-12 col-sm-12">
+            <div class="col-xs-12 col-sm-12" id="colContent">
                 <nav>
                     <div class="nav nav-tabs" id="nav-tab" role="tablist">
                         <a class="nav-item nav-link active" id="nav-english-tab" data-toggle="tab" href="#nav-english" role="tab"
@@ -75,11 +72,19 @@
                             onclick="if (!$(this).hasClass('active')) {App.retriveVicInfo();} return false;">Vicrey Auctions
                             <span class="badge badge-warning" id="eventVicBadge"></span></a>
                         <a class="nav-item nav-link" id="nav-managing-tab" data-toggle="tab" href="#nav-managing" role="tab"
-                            aria-controls="nav-managing" aria-selected="false"></a>
+                            aria-controls="nav-managing" aria-selected="false">Create Auction</a>
                     </div>
                 </nav>
                 <div class="tab-content" id="nav-tabContent">
+                    <!-- ENGLISH CONTAINER -->
                     <div class="tab-pane fade show active" id="nav-english" role="tabpanel" aria-labelledby="nav-english-tab">
+                        <div class="container" id="engNoAuction" style="display: none;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 mt-2">
+                                    <p>There are no English active auctions.</p>
+                                </div>
+                            </div>
+                        </div>
                         <div class="container" id="engOwn" style="display: none;">
                             <div class="row">
                                 <div class="col-xs-12 col-sm-12 mt-2">
@@ -110,7 +115,15 @@
                             </div>
                         </div>
                     </div>
+                    <!-- VICREY CONTAINER -->
                     <div class="tab-pane fade" id="nav-vicrey" role="tabpanel" aria-labelledby="nav-vicrey-tab">
+                        <div class="container" id="vicNoAuction" style="display: none;">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 mt-2">
+                                    <p>There are no Vicrey active auctions.</p>
+                                </div>
+                            </div>
+                        </div>
                         <div class="container" id="vicOwn" style="display: none;">
                             <div class="row">
                                 <div class="col-xs-12 col-sm-12 mt-3">
@@ -141,18 +154,18 @@
                             </div>
                         </div>
                     </div>
+                    <!-- CREATION CONTAINER -->
                     <div class="tab-pane fade" id="nav-managing" role="tabpanel" aria-labelledby="nav-managing-tab">
-                        <div class="container JUSTIFY-CONTENT-CENTER" id="createContainer">
+                        <div class="container justify-content-center" id="createContainer">
                             <div class="row">
                                 <div class="col-xs-8 col-sm-8 mt-2">
-
                                 </div>
                             </div>
                         </div>
                         <div class="container" id="createContainer">
                             <div class="row">
-                                <div class="col-xs-8 col-sm-8 mt-2">
-                                    <p>Here you can create an auction</p>
+                                <div class="col-xs-8 col-sm-8 mt-2" id="createAuctionCol">
+                                    <p>Here you can create an auction.</p>
                                 </div>
                                 <div class="col-xs-8 col-sm-8 mt-2">
                                     <div class="input-group mt-2">
@@ -232,7 +245,7 @@
                                 </div>
                                 <div class="col-xs-8 col-sm-8 mt-2">
                                     <button type="button" class="btn btn-outlint btn-primary mb-2 "
-                                        onclick="App.createAuction(); return false;" id="createBtn">Create Auction</button>
+                                        onclick="createAuction(); return false;" id="createBtn">Create Auction</button>
                                 </div>
                             </div>
                         </div>
@@ -242,9 +255,10 @@
         </div>
     </div>
 
+    <!-- AUCTION TEMPLATE -->
     <div style="display: none;" class="card border-success auctionTemplate h-100">
         <div class="card-body text-dark">
-            <h5 class="text-center"></h5>
+            <h5 class="text-center text-danger"></h5>
             <h6 class="text-center text-primary"></h6>
             <ul class="list-group list-group-flush">
             </ul>
@@ -303,6 +317,20 @@
             </div>
         </div>
     </div>
+    <!-- Modal to show the whole address -->
+    <div class="modal fade" id="managerAddrModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Address</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="addressManager"></p>
+                </div>
+            </div>
+        </div>
+      </div>
 </body>
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
@@ -316,10 +344,14 @@
 <script src="js/bootstrap-notify.min.js"></script>
 <script src="js/truffle-contract.min.js"></script>
 <script src="js/drawUtils.js"></script>
+<script src="js/contractFunction.js"></script>
 <script src="js/bn.js"></script>
 <script src="js/app.js"></script>
 
+<!-- AUXILIARY FUNCTION -->
 <script lang="jquery">
+
+    /** < creation switch buy out >*/
     $(function () {
         $('#createType').change(function () {
             var type = $(this).val();
@@ -333,14 +365,16 @@
             }
         });
     });
+
+    /** < sha3 computation >*/
     function computeSha3(reserve) {
-        /** < Retrive information */
+        /** < Retrive information >*/
         var nonce = $('#nonceSha3').val();
         var amount = $('#amountSha3').val();
         var measure = $('#measureSha3').find('option:selected').val();
         $('#resultSha3').val("");
 
-        /** < Check if empty */
+        /** < Check if empty >*/
         if (nonce == '' || nonce == null) {
             $('#errorSpanNonce').text("The nonce is required!");
             $('#errorSpanAmount').text("");
@@ -348,7 +382,7 @@
             return false;
         }
 
-        /** < Check if empty */
+        /** < Check if empty >*/
         if (amount == '' || amount == null) {
             $('#errorSpanAmount').text("The bid amount is required!");
             $('#errorSpanNonce').text("");
@@ -356,7 +390,7 @@
             return false;
         }
 
-        /** < Convert if needed and check if it is a number*/
+        /** < Convert if needed and check if it is a number >*/
         if (measure == 'eth') {
             try {
                 amount = web3.utils.toWei(amount, 'ether');
@@ -393,43 +427,19 @@
             return false;
         }
     };
-</script>
 
-<!-- FORMM
-        <div id="auctionRow" class="row">
-            <div class="col-xs-12 col-sm-8 col-sm-push-2">
-                <form id="bidForm" class="needs-validation" onSubmit="App.makeBid(); return false;" novalidate>
-                    <div class="form-group">
-                        <label for="inputBid">Make a Bid (wei)</label>
-                        <input type="text" class="form-control" id="inputBid" name="inputBid" placeholder="value" value=""
-                            pattern="[0-9]{0,30}$" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Bid</button>
-                    <hr />
-                </form>
-            </div>
-        </div> 
-    -->
-<!-- 
-    
-<script lang="jquery">
-    $(document).ready(function () {
-
-        $('#bidForm').validate({
-            rules: {
-                inputBid: {
-                    required: true,
-                    number: true
-                }
-            },
-            messages: {
-                inputBid: {
-                    required: "Insert an integer value for your bid expressed in Wei!",
-                    number: "Must be an integer!"
-                }
-            }
-        });
+    /** < Clear events bedge alert >*/
+    $("#nav-english-tab").on('click', function() {
+        $("#eventEngBadge").text("");
     });
-</script> -->
+    $("#nav-vicrey-tab").on('click', function() {
+        $("#eventVicBadge").text("");
+    });
 
+    function showAddressModal(address) {
+        $('#addressManager').text(address);
+        $('#managerAddrModal').modal('show');
+    }
+                
+</script>
 </html>
